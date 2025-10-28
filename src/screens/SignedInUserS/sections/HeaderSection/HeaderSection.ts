@@ -14,7 +14,7 @@ export const HeaderSection = (): JSX.Element => {
         <time className="opacity-0 translate-y-[-1rem] animate-fade-in [--animation-delay:0ms]">
           11:11
         </time>
-
+         
         <div className="flex items-center gap-2 opacity-0 translate-y-[-1rem] animate-fade-in [--animation-delay:100ms]">
           <div className="flex items-end gap-0.5 h-3.5 relative">
             {signalBars.map((bar, index) => (
