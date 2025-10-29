@@ -16,6 +16,7 @@ import pyproj
 from pyproj import Transformer
 import simplekml
 import geojson
+import ezdxf
 from datetime import datetime
 
 app = Flask(__name__)
@@ -129,6 +130,61 @@ def calculate_polygon_metrics(coordinates):
         area_sqm = area_degrees * (111320 ** 2)  # Rough approximation
         perimeter_m = polygon.length * 111320
         return area_sqm, perimeter_m
+
+def dms_to_decimal(degrees, minutes, seconds):
+    """Convert degrees, minutes, seconds to decimal degrees"""
+    return degrees + minutes/60.0 + seconds/3600.0
+
+def decimal_to_dms(decimal_degrees):
+    """Convert decimal degrees to degrees, minutes, seconds"""
+    degrees = int(decimal_degrees)
+    minutes_float = (decimal_degrees - degrees) * 60
+    minutes = int(minutes_float)
+    seconds = (minutes_float - minutes) * 60
+    return degrees, minutes, seconds
+
+def calculate_point_from_distance_azimuth(start_lat, start_lon, distance_m, azimuth_degrees):
+    """Calculate new point from start point, distance (meters), and azimuth (degrees)"""
+    from geopy.distance import geodesic
+    
+    # Use geopy for accurate geodesic calculations
+    start_point = (start_lat, start_lon)
+    
+    # Calculate bearing (azimuth) - geopy uses bearing from north clockwise
+    bearing = azimuth_degrees
+    
+    # Calculate destination point
+    destination = geodesic(meters=distance_m).destination(start_point, bearing)
+    
+    return destination.latitude, destination.longitude
+
+def calculate_azimuth_distance(lat1, lon1, lat2, lon2):
+    """Calculate azimuth and distance between two points"""
+    from geopy.distance import geodesic
+    import math
+    
+    point1 = (lat1, lon1)
+    point2 = (lat2, lon2)
+    
+    # Calculate distance
+    dist = geodesic(point1, point2).meters
+    
+    # Calculate bearing (azimuth) using basic spherical trigonometry
+    lat1_rad = math.radians(lat1)
+    lat2_rad = math.radians(lat2)
+    lon1_rad = math.radians(lon1)
+    lon2_rad = math.radians(lon2)
+    
+    dlon = lon2_rad - lon1_rad
+    
+    y = math.sin(dlon) * math.cos(lat2_rad)
+    x = math.cos(lat1_rad) * math.sin(lat2_rad) - math.sin(lat1_rad) * math.cos(lat2_rad) * math.cos(dlon)
+    
+    bearing = math.atan2(y, x)
+    bearing = math.degrees(bearing)
+    bearing = (bearing + 360) % 360  # Normalize to 0-360
+    
+    return bearing, dist
 
 @app.route('/')
 def index():
@@ -372,6 +428,62 @@ def calculate_area():
         'points_count': len(points)
     })
 
+@app.route('/api/calculate/point_from_distance_azimuth', methods=['POST'])
+def calculate_point_from_distance_azimuth_api():
+    """Calculate new point coordinates from reference point, distance and azimuth"""
+    data = request.get_json()
+    
+    try:
+        start_lat = float(data['start_lat'])
+        start_lon = float(data['start_lon'])
+        distance_m = float(data['distance_m'])
+        azimuth_degrees = float(data['azimuth_degrees'])
+        
+        # Calculate new point
+        new_lat, new_lon = calculate_point_from_distance_azimuth(
+            start_lat, start_lon, distance_m, azimuth_degrees
+        )
+        
+        return jsonify({
+            'latitude': new_lat,
+            'longitude': new_lon,
+            'utm_coordinates': lat_lon_to_utm(new_lat, new_lon)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Calculation failed: {str(e)}'}), 400
+
+@app.route('/api/calculate/azimuth_distance', methods=['POST'])
+def calculate_azimuth_distance_api():
+    """Calculate azimuth and distance between two points"""
+    data = request.get_json()
+    
+    try:
+        lat1 = float(data['lat1'])
+        lon1 = float(data['lon1'])
+        lat2 = float(data['lat2'])
+        lon2 = float(data['lon2'])
+        
+        # Calculate azimuth and distance
+        azimuth, distance = calculate_azimuth_distance(lat1, lon1, lat2, lon2)
+        
+        # Convert azimuth to DMS
+        degrees, minutes, seconds = decimal_to_dms(azimuth)
+        
+        return jsonify({
+            'azimuth_decimal': azimuth,
+            'azimuth_dms': {
+                'degrees': degrees,
+                'minutes': minutes,
+                'seconds': seconds
+            },
+            'distance_meters': distance,
+            'distance_km': distance / 1000
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Calculation failed: {str(e)}'}), 400
+
 # Polygon API endpoints
 @app.route('/api/polygons', methods=['GET'])
 def get_polygons():
@@ -560,6 +672,83 @@ def export_kml():
         mimetype='application/vnd.google-earth.kml+xml',
         as_attachment=True,
         download_name=f'survey_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.kml'
+    )
+
+@app.route('/api/export/dxf')
+def export_dxf():
+    """Export points and polygons to DXF format"""
+    points = ReferencePoint.query.all()
+    polygons = SurveyPolygon.query.all()
+    
+    # Create new DXF document
+    doc = ezdxf.new('R2010')  # Use AutoCAD 2010 version
+    msp = doc.modelspace()  # Get the modelspace
+    
+    # Add points as point entities
+    for point in points:
+        # Add point entity
+        msp.add_point((point.longitude, point.latitude, point.elevation or 0))
+        
+        # Add text label for the point
+        msp.add_text(
+            point.name,
+            dxfattribs={
+                'insert': (point.longitude, point.latitude + 0.0001, point.elevation or 0),
+                'height': 0.0005,
+                'style': 'Standard'
+            }
+        )
+    
+    # Add polygons as polylines/lwpolylines
+    for polygon in polygons:
+        coords = json.loads(polygon.coordinates)
+        
+        # Convert coordinates to proper format (lon, lat, elevation)
+        dxf_coords = []
+        for coord in coords:
+            dxf_coords.append((coord[1], coord[0], 0))  # Convert lat,lon to lon,lat
+        
+        # Close the polygon by adding the first point at the end
+        if len(dxf_coords) > 0 and dxf_coords[0] != dxf_coords[-1]:
+            dxf_coords.append(dxf_coords[0])
+        
+        # Add as polyline
+        polyline = msp.add_lwpolyline(
+            dxf_coords,
+            dxfattribs={'layer': 'SURVEY_POLYGONS', 'color': 1}  # Red color
+        )
+        
+        # Add polygon label at centroid
+        if len(coords) >= 3:
+            # Calculate centroid
+            centroid_lat = sum(coord[0] for coord in coords) / len(coords)
+            centroid_lon = sum(coord[1] for coord in coords) / len(coords)
+            
+            # Add text at centroid
+            msp.add_text(
+                f"{polygon.name}\nArea: {polygon.area_sqm:.2f} m²",
+                dxfattribs={
+                    'insert': (centroid_lon, centroid_lat, 0),
+                    'height': 0.001,
+                    'style': 'Standard',
+                    'layer': 'SURVEY_LABELS'
+                }
+            )
+    
+    # Create layers
+    doc.layers.new(name='SURVEY_POINTS', dxfattribs={'color': 3})  # Green
+    doc.layers.new(name='SURVEY_POLYGONS', dxfattribs={'color': 1})  # Red
+    doc.layers.new(name='SURVEY_LABELS', dxfattribs={'color': 7})  # White/Black
+    
+    # Save to temporary file
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.dxf')
+    doc.saveas(temp_file.name)
+    
+    return send_file(
+        temp_file.name,
+        mimetype='application/dxf',
+        as_attachment=True,
+        download_name=f'survey_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.dxf'
     )
 
 @app.route('/api/import/csv', methods=['POST'])
