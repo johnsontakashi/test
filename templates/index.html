@@ -1,0 +1,807 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="px-4 sm:px-0">
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 sm:text-5xl md:text-6xl">
+            Professional 2D Surveying Suite
+        </h1>
+        <p class="mt-4 max-w-2xl mx-auto text-xl text-gray-600">
+            Advanced topography surveying tool with interactive mapping, precise calculations, and comprehensive data management
+        </p>
+    </div>
+
+    <!-- Real-time Statistics Dashboard -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <i class="fas fa-chart-bar mr-3 text-blue-600"></i>
+            Live Terrain Statistics
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="statsGrid">
+            <!-- Statistics will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Main Feature Cards -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        <!-- Interactive Mapping -->
+        <div class="survey-card rounded-xl shadow-lg p-6 border border-gray-200">
+            <div class="flex items-center mb-4">
+                <div class="bg-blue-100 rounded-lg p-3 mr-4">
+                    <i class="fas fa-map text-2xl text-blue-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900">Interactive Mapping</h3>
+            </div>
+            <p class="text-gray-600 mb-6">
+                Professional mapping interface with polygon drawing, multiple map layers, and real-time calculations
+            </p>
+            <div class="space-y-2 mb-6">
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    Satellite, terrain, and street views
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    Real-time area & perimeter calculations
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    UTM coordinate conversion
+                </div>
+            </div>
+            <a href="{{ url_for('show_map') }}" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200 inline-block text-center">
+                Launch Interactive Map
+            </a>
+        </div>
+
+        <!-- Survey Management -->
+        <div class="survey-card rounded-xl shadow-lg p-6 border border-gray-200">
+            <div class="flex items-center mb-4">
+                <div class="bg-green-100 rounded-lg p-3 mr-4">
+                    <i class="fas fa-tools text-2xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900">Survey Management</h3>
+            </div>
+            <p class="text-gray-600 mb-6">
+                Comprehensive point and polygon management with professional surveying tools
+            </p>
+            <div class="space-y-3">
+                <button onclick="showAddPointForm()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                    <i class="fas fa-map-pin mr-2"></i>Add Reference Point
+                </button>
+                <button onclick="loadPolygons()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                    <i class="fas fa-draw-polygon mr-2"></i>Manage Polygons
+                </button>
+            </div>
+        </div>
+
+        <!-- Data Analysis -->
+        <div class="survey-card rounded-xl shadow-lg p-6 border border-gray-200">
+            <div class="flex items-center mb-4">
+                <div class="bg-purple-100 rounded-lg p-3 mr-4">
+                    <i class="fas fa-calculator text-2xl text-purple-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-900">Data Analysis</h3>
+            </div>
+            <p class="text-gray-600 mb-6">
+                Advanced calculations and multi-format data import/export capabilities
+            </p>
+            <div class="space-y-2 mb-6">
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    Distance & area calculations
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    CSV, GeoJSON, KML support
+                </div>
+                <div class="flex items-center text-sm text-gray-600">
+                    <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                    Terrain statistics
+                </div>
+            </div>
+            <button onclick="showImportExport()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                Import/Export Data
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Actions Panel -->
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+            <i class="fas fa-bolt mr-3 text-yellow-500"></i>
+            Quick Actions
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <button onclick="loadPoints()" class="action-btn">
+                <i class="fas fa-map-pin text-blue-600 mb-2"></i>
+                <span class="text-sm font-medium">View Points</span>
+            </button>
+            <button onclick="loadPolygons()" class="action-btn">
+                <i class="fas fa-draw-polygon text-green-600 mb-2"></i>
+                <span class="text-sm font-medium">View Polygons</span>
+            </button>
+            <button onclick="showCalculations()" class="action-btn">
+                <i class="fas fa-ruler text-purple-600 mb-2"></i>
+                <span class="text-sm font-medium">Distance Calc</span>
+            </button>
+            <button onclick="showAreaCalculator()" class="action-btn">
+                <i class="fas fa-vector-square text-red-600 mb-2"></i>
+                <span class="text-sm font-medium">Area Calc</span>
+            </button>
+            <button onclick="refreshStats()" class="action-btn">
+                <i class="fas fa-sync text-indigo-600 mb-2"></i>
+                <span class="text-sm font-medium">Refresh Stats</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Point Modal -->
+<div id="addPointModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-semibold text-gray-900">Add Reference Point</h3>
+                <button onclick="closeModal('addPointModal')" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="addPointForm" class="space-y-4">
+                <div>
+                    <label for="pointName" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input type="text" id="pointName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                </div>
+                
+                <div>
+                    <label for="pointDescription" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="pointDescription" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="pointLatitude" class="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+                        <input type="number" step="any" id="pointLatitude" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    </div>
+                    <div>
+                        <label for="pointLongitude" class="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+                        <input type="number" step="any" id="pointLongitude" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    </div>
+                </div>
+                
+                <div>
+                    <label for="pointElevation" class="block text-sm font-medium text-gray-700 mb-1">Elevation (m)</label>
+                    <input type="number" step="any" id="pointElevation" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>
+                
+                <div>
+                    <label for="pointType" class="block text-sm font-medium text-gray-700 mb-1">Point Type</label>
+                    <select id="pointType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="waypoint">Waypoint</option>
+                        <option value="benchmark">Benchmark</option>
+                        <option value="survey_point">Survey Point</option>
+                        <option value="control_point">Control Point</option>
+                    </select>
+                </div>
+                
+                <div class="flex space-x-3 pt-4">
+                    <button type="button" onclick="closeModal('addPointModal')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                        Cancel
+                    </button>
+                    <button type="button" onclick="addPoint()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                        Add Point
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Points List -->
+<div class="mt-8 hidden" id="pointsList">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-map-pin mr-3 text-blue-600"></i>
+                Reference Points
+            </h3>
+            <button onclick="hideDataPanels()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Latitude</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Longitude</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Elevation</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="pointsTableBody" class="bg-white divide-y divide-gray-200">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Polygons List -->
+<div class="mt-8 hidden" id="polygonsList">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-draw-polygon mr-3 text-green-600"></i>
+                Survey Polygons
+            </h3>
+            <button onclick="hideDataPanels()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Area (m²)</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perimeter (m)</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vertices</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="polygonsTableBody" class="bg-white divide-y divide-gray-200">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Import/Export Panel -->
+<div class="mt-8 hidden" id="importExportPanel">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-exchange-alt mr-3 text-purple-600"></i>
+                Import/Export Data
+            </h3>
+            <button onclick="hideDataPanels()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Export Section -->
+            <div class="space-y-4">
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Export Data</h4>
+                <p class="text-gray-600 mb-4">Download your survey data in various formats:</p>
+                <div class="space-y-3">
+                    <a href="/api/export/csv" class="flex items-center justify-center w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-file-csv mr-2"></i> Export as CSV
+                    </a>
+                    <a href="/api/export/geojson" class="flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-file-code mr-2"></i> Export as GeoJSON
+                    </a>
+                    <a href="/api/export/kml" class="flex items-center justify-center w-full bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        <i class="fas fa-globe mr-2"></i> Export as KML
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Import Section -->
+            <div class="space-y-4">
+                <h4 class="text-lg font-medium text-gray-900 mb-4">Import Data</h4>
+                <p class="text-gray-600 mb-4">Import survey data from external sources:</p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="importFormatSelect" class="block text-sm font-medium text-gray-700 mb-1">Import Format</label>
+                        <select id="importFormatSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="geojson">GeoJSON</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="importFileInput" class="block text-sm font-medium text-gray-700 mb-1">Select File</label>
+                        <input type="file" id="importFileInput" accept=".geojson,.json,.csv" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    <button onclick="performImport()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors duration-200">
+                        Import Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Distance Calculator -->
+<div class="mt-8 hidden" id="distanceCalculator">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-ruler mr-3 text-purple-600"></i>
+                Distance Calculator
+            </h3>
+            <button onclick="hideDataPanels()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">First Point</label>
+                <select id="point1Select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Select first point</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Second Point</label>
+                <select id="point2Select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="">Select second point</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button onclick="calculateDistance()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                    Calculate
+                </button>
+            </div>
+        </div>
+        <div id="distanceResult"></div>
+    </div>
+</div>
+
+<!-- Area Calculator -->
+<div class="mt-8 hidden" id="areaCalculator">
+    <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-semibold text-gray-900 flex items-center">
+                <i class="fas fa-vector-square mr-3 text-red-600"></i>
+                Area Calculator
+            </h3>
+            <button onclick="hideDataPanels()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <p class="text-gray-600 mb-4">Select multiple points to calculate enclosed area:</p>
+        <div id="areaPointsSelection" class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+        <button onclick="calculateArea()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 mb-4">
+            Calculate Area
+        </button>
+        <div id="areaResult"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.action-btn {
+    @apply flex flex-col items-center justify-center p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 cursor-pointer;
+}
+.action-btn:hover {
+    @apply shadow-md border-blue-200;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allPoints = [];
+let allPolygons = [];
+let currentStats = {
+    totalPoints: 0,
+    totalPolygons: 0,
+    totalArea: 0,
+    totalPerimeter: 0,
+    vertices: 0
+};
+
+// Page initialization
+document.addEventListener('DOMContentLoaded', function() {
+    refreshStats();
+    loadInitialData();
+});
+
+// Modal management
+function showAddPointForm() {
+    document.getElementById('addPointModal').classList.remove('hidden');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
+// Data panel management
+function hideDataPanels() {
+    const panels = ['pointsList', 'polygonsList', 'importExportPanel', 'distanceCalculator', 'areaCalculator'];
+    panels.forEach(panel => {
+        document.getElementById(panel).classList.add('hidden');
+    });
+}
+
+function showPanel(panelId) {
+    hideDataPanels();
+    document.getElementById(panelId).classList.remove('hidden');
+}
+
+// Statistics dashboard
+async function refreshStats() {
+    try {
+        const [pointsResponse, polygonsResponse] = await Promise.all([
+            fetch('/api/points'),
+            fetch('/api/polygons')
+        ]);
+        
+        const points = await pointsResponse.json();
+        const polygons = await polygonsResponse.json();
+        
+        updateStats(points, polygons);
+        displayStats();
+    } catch (error) {
+        console.error('Error refreshing stats:', error);
+    }
+}
+
+function updateStats(points, polygons) {
+    currentStats.totalPoints = points.length;
+    currentStats.totalPolygons = polygons.length;
+    currentStats.totalArea = polygons.reduce((sum, p) => sum + (p.area_sqm || 0), 0);
+    currentStats.totalPerimeter = polygons.reduce((sum, p) => sum + (p.perimeter_m || 0), 0);
+    currentStats.vertices = polygons.reduce((sum, p) => sum + (p.coordinates ? p.coordinates.length : 0), 0);
+    
+    allPoints = points;
+    allPolygons = polygons;
+}
+
+function displayStats() {
+    const statsGrid = document.getElementById('statsGrid');
+    statsGrid.innerHTML = `
+        <div class="stats-card text-white rounded-xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-white/80 text-sm font-medium">Reference Points</p>
+                    <p class="text-3xl font-bold">${currentStats.totalPoints}</p>
+                </div>
+                <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fas fa-map-pin text-2xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-white/80">
+                <i class="fas fa-arrow-up mr-1"></i>
+                Active survey points
+            </div>
+        </div>
+        
+        <div class="terrain-stats text-white rounded-xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-white/80 text-sm font-medium">Survey Polygons</p>
+                    <p class="text-3xl font-bold">${currentStats.totalPolygons}</p>
+                </div>
+                <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fas fa-draw-polygon text-2xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-white/80">
+                <i class="fas fa-shapes mr-1"></i>
+                Surveyed areas
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-r from-green-400 to-blue-500 text-white rounded-xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-white/80 text-sm font-medium">Total Area</p>
+                    <p class="text-2xl font-bold">${formatArea(currentStats.totalArea)}</p>
+                </div>
+                <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fas fa-vector-square text-2xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-white/80">
+                <i class="fas fa-expand-arrows-alt mr-1"></i>
+                Surveyed terrain
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-r from-purple-400 to-pink-500 text-white rounded-xl p-6 shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-white/80 text-sm font-medium">Total Vertices</p>
+                    <p class="text-3xl font-bold">${currentStats.vertices}</p>
+                </div>
+                <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fas fa-dot-circle text-2xl"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-white/80">
+                <i class="fas fa-connect mr-1"></i>
+                Polygon vertices
+            </div>
+        </div>
+    `;
+}
+
+function formatArea(area) {
+    if (area >= 10000) {
+        return (area / 10000).toFixed(2) + ' ha';
+    } else {
+        return area.toFixed(2) + ' m²';
+    }
+}
+
+async function loadInitialData() {
+    try {
+        await Promise.all([loadPoints(), loadPolygons()]);
+    } catch (error) {
+        console.error('Error loading initial data:', error);
+    }
+}
+
+function addPoint() {
+    const formData = {
+        name: document.getElementById('pointName').value,
+        description: document.getElementById('pointDescription').value,
+        latitude: document.getElementById('pointLatitude').value,
+        longitude: document.getElementById('pointLongitude').value,
+        elevation: document.getElementById('pointElevation').value,
+        point_type: document.getElementById('pointType').value
+    };
+
+    fetch('/api/points', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Point added successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('addPointModal')).hide();
+        document.getElementById('addPointForm').reset();
+        loadPoints();
+    })
+    .catch(error => {
+        alert('Error adding point: ' + error);
+    });
+}
+
+function loadPoints() {
+    fetch('/api/points')
+    .then(response => response.json())
+    .then(data => {
+        allPoints = data;
+        displayPoints(data);
+        populatePointSelectors();
+        document.getElementById('pointsList').style.display = 'block';
+    });
+}
+
+function displayPoints(points) {
+    const tbody = document.getElementById('pointsTableBody');
+    tbody.innerHTML = '';
+    
+    points.forEach(point => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td>${point.name}</td>
+            <td>${point.point_type}</td>
+            <td>${point.latitude.toFixed(6)}</td>
+            <td>${point.longitude.toFixed(6)}</td>
+            <td>${point.elevation || 'N/A'}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deletePoint(${point.id})">Delete</button>
+            </td>
+        `;
+    });
+}
+
+function deletePoint(pointId) {
+    if (confirm('Are you sure you want to delete this point?')) {
+        fetch(`/api/points/${pointId}`, {
+            method: 'DELETE'
+        })
+        .then(() => {
+            loadPoints();
+        });
+    }
+}
+
+function populatePointSelectors() {
+    const selectors = ['point1Select', 'point2Select'];
+    selectors.forEach(selectorId => {
+        const select = document.getElementById(selectorId);
+        select.innerHTML = '<option value="">Select point</option>';
+        allPoints.forEach(point => {
+            const option = document.createElement('option');
+            option.value = point.id;
+            option.textContent = point.name;
+            select.appendChild(option);
+        });
+    });
+    
+    // Populate area calculator checkboxes
+    const areaSelection = document.getElementById('areaPointsSelection');
+    areaSelection.innerHTML = '';
+    allPoints.forEach(point => {
+        const div = document.createElement('div');
+        div.className = 'form-check';
+        div.innerHTML = `
+            <input class="form-check-input" type="checkbox" value="${point.id}" id="area_point_${point.id}">
+            <label class="form-check-label" for="area_point_${point.id}">
+                ${point.name} (${point.latitude.toFixed(4)}, ${point.longitude.toFixed(4)})
+            </label>
+        `;
+        areaSelection.appendChild(div);
+    });
+}
+
+function showCalculations() {
+    loadPoints();
+    document.getElementById('distanceCalculator').style.display = 'block';
+}
+
+function showAreaCalculator() {
+    loadPoints();
+    document.getElementById('areaCalculator').style.display = 'block';
+}
+
+function calculateDistance() {
+    const point1Id = document.getElementById('point1Select').value;
+    const point2Id = document.getElementById('point2Select').value;
+    
+    if (!point1Id || !point2Id) {
+        alert('Please select both points');
+        return;
+    }
+    
+    fetch(`/api/calculate/distance?point1_id=${point1Id}&point2_id=${point2Id}`)
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('distanceResult');
+        resultDiv.innerHTML = `
+            <div class="alert alert-info">
+                <h5>Distance Calculation Result</h5>
+                <p><strong>Distance:</strong> ${data.distance_meters.toFixed(2)} meters</p>
+                ${data.elevation_difference ? `<p><strong>Elevation Difference:</strong> ${data.elevation_difference.toFixed(2)} meters</p>` : ''}
+                <p><strong>Between:</strong> ${data.point1.name} and ${data.point2.name}</p>
+            </div>
+        `;
+    });
+}
+
+function loadPolygons() {
+    fetch('/api/polygons')
+    .then(response => response.json())
+    .then(data => {
+        allPolygons = data;
+        displayPolygons(data);
+        showPanel('polygonsList');
+        refreshStats();
+    });
+}
+
+function displayPolygons(polygons) {
+    const tbody = document.getElementById('polygonsTableBody');
+    tbody.innerHTML = '';
+    
+    polygons.forEach(polygon => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50';
+        const createdDate = polygon.created_at ? new Date(polygon.created_at).toLocaleDateString() : 'N/A';
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${polygon.name}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${polygon.polygon_type}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${polygon.area_sqm.toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${polygon.perimeter_m.toFixed(2)}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${polygon.coordinates.length}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${createdDate}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                <button onclick="showPolygonDetails(${polygon.id})" class="text-blue-600 hover:text-blue-900">Details</button>
+                <button onclick="deletePolygon(${polygon.id})" class="text-red-600 hover:text-red-900">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function showPolygonDetails(polygonId) {
+    const polygon = allPolygons.find(p => p.id === polygonId);
+    if (polygon) {
+        let coordStr = polygon.coordinates.map((coord, i) => 
+            `Vertex ${i+1}: ${coord[0].toFixed(6)}, ${coord[1].toFixed(6)}`
+        ).join('\n');
+        
+        alert(`Polygon Details:\n\nName: ${polygon.name}\nType: ${polygon.polygon_type}\nArea: ${polygon.area_sqm.toFixed(2)} m²\nPerimeter: ${polygon.perimeter_m.toFixed(2)} m\n\nVertices:\n${coordStr}`);
+    }
+}
+
+function deletePolygon(polygonId) {
+    if (confirm('Are you sure you want to delete this polygon?')) {
+        fetch(`/api/polygons/${polygonId}`, {
+            method: 'DELETE'
+        })
+        .then(() => {
+            loadPolygons(); // Refresh the list
+        });
+    }
+}
+
+function showImportExport() {
+    showPanel('importExportPanel');
+}
+
+function showCalculations() {
+    loadPoints();
+    showPanel('distanceCalculator');
+}
+
+function showAreaCalculator() {
+    loadPoints();
+    showPanel('areaCalculator');
+}
+
+function performImport() {
+    const format = document.getElementById('importFormatSelect').value;
+    const fileInput = document.getElementById('importFileInput');
+    
+    if (fileInput.files.length === 0) {
+        alert('Please select a file to import');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    
+    fetch(`/api/import/${format}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully imported ${data.imported_points} points and ${data.imported_polygons} polygons!`);
+            fileInput.value = '';
+            refreshStats();
+        } else {
+            alert('Import failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error importing data: ' + error);
+    });
+}
+
+function calculateArea() {
+    const checkboxes = document.querySelectorAll('#areaPointsSelection input[type="checkbox"]:checked');
+    const pointIds = Array.from(checkboxes).map(cb => cb.value);
+    
+    if (pointIds.length < 3) {
+        alert('Please select at least 3 points to calculate area');
+        return;
+    }
+    
+    const queryString = pointIds.map(id => `point_ids=${id}`).join('&');
+    
+    fetch(`/api/calculate/area?${queryString}`)
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('areaResult');
+        resultDiv.innerHTML = `
+            <div class="alert alert-success">
+                <h5>Area Calculation Result</h5>
+                <p><strong>Area:</strong> ${data.area_square_meters.toFixed(2)} square meters</p>
+                <p><strong>Perimeter:</strong> ${data.perimeter_meters.toFixed(2)} meters</p>
+                <p><strong>Points used:</strong> ${data.points_count}</p>
+            </div>
+        `;
+    });
+}
+</script>
+{% endblock %}
