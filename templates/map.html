@@ -1,0 +1,1129 @@
+{% extends "base.html" %}
+
+{% block title %}Agrimensura - Professional Surveying System{% endblock %}
+
+{% block content %}
+<div class="surveying-interface">
+    <!-- Left Sidebar Control Panel -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-map-marked-alt"></i> Agrimensura</h2>
+            <p>Professional 2D Topographic Surveying</p>
+        </div>
+
+        <!-- Control Tabs -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="showTab('point-entry')">
+                <i class="fas fa-plus-circle"></i> Point Entry
+            </button>
+            <button class="tab-btn" onclick="showTab('vertex-list')">
+                <i class="fas fa-list"></i> Vertices
+            </button>
+            <button class="tab-btn" onclick="showTab('polygon-controls')">
+                <i class="fas fa-draw-polygon"></i> Polygon
+            </button>
+            <button class="tab-btn" onclick="showTab('export-tools')">
+                <i class="fas fa-download"></i> Export
+            </button>
+        </div>
+
+        <!-- Point Entry Tab -->
+        <div id="point-entry" class="tab-content active">
+            <div class="section">
+                <h3>Add Vertex</h3>
+                
+                <!-- Method Selection -->
+                <div class="input-group">
+                    <label>Entry Method</label>
+                    <select id="entryMethod" onchange="toggleEntryMethod()">
+                        <option value="coordinates">Coordinates</option>
+                        <option value="distance-azimuth">Distance & Azimuth</option>
+                    </select>
+                </div>
+
+                <!-- Coordinate Entry -->
+                <div id="coordinates-entry">
+                    <div class="input-group">
+                        <label>Latitude (°)</label>
+                        <input type="number" id="latitude" step="any" placeholder="40.712800">
+                    </div>
+                    <div class="input-group">
+                        <label>Longitude (°)</label>
+                        <input type="number" id="longitude" step="any" placeholder="-74.006000">
+                    </div>
+                </div>
+
+                <!-- Distance & Azimuth Entry -->
+                <div id="distance-azimuth-entry" style="display: none;">
+                    <div class="input-group">
+                        <label>Distance (meters)</label>
+                        <input type="number" id="distance" step="0.001" placeholder="100.0">
+                    </div>
+                    <div class="input-group">
+                        <label>Azimuth</label>
+                        <div class="dms-input">
+                            <input type="number" id="azimuth-degrees" placeholder="45" min="0" max="359"> °
+                            <input type="number" id="azimuth-minutes" placeholder="30" min="0" max="59"> '
+                            <input type="number" id="azimuth-seconds" placeholder="15" min="0" max="59" step="0.1"> "
+                        </div>
+                    </div>
+                    <div id="reference-point-info" class="info-box">
+                        <small>Reference point will be the last added vertex</small>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="addVertex()">
+                    <i class="fas fa-plus"></i> Add Vertex
+                </button>
+                <button class="btn btn-secondary" onclick="addVertexFromMap()" style="margin-top: 8px;">
+                    <i class="fas fa-map-pin"></i> Click on Map
+                </button>
+            </div>
+
+            <div class="section">
+                <h3>Quick Actions</h3>
+                <button class="btn btn-outline" onclick="clearPolygon()">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+                <button class="btn btn-outline" onclick="closePolygon()">
+                    <i class="fas fa-link"></i> Close Polygon
+                </button>
+            </div>
+        </div>
+
+        <!-- Vertex List Tab -->
+        <div id="vertex-list" class="tab-content">
+            <div class="section">
+                <h3>Vertex Coordinates</h3>
+                <div class="vertices-table">
+                    <div class="table-header">
+                        <span>ID</span>
+                        <span>Latitude</span>
+                        <span>Longitude</span>
+                        <span>Actions</span>
+                    </div>
+                    <div id="vertices-list" class="table-body">
+                        <!-- Vertices will be added here -->
+                    </div>
+                </div>
+                <div class="section-footer">
+                    <small id="vertex-count">0 vertices</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Polygon Controls Tab -->
+        <div id="polygon-controls" class="tab-content">
+            <div class="section">
+                <h3>Polygon Properties</h3>
+                <div class="input-group">
+                    <label>Name</label>
+                    <input type="text" id="polygon-name" placeholder="Survey Area 1">
+                </div>
+                <div class="input-group">
+                    <label>Description</label>
+                    <textarea id="polygon-description" placeholder="Property boundary survey..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Type</label>
+                    <select id="polygon-type">
+                        <option value="survey_area">Survey Area</option>
+                        <option value="property_boundary">Property Boundary</option>
+                        <option value="restricted_zone">Restricted Zone</option>
+                        <option value="construction_zone">Construction Zone</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Display Options</h3>
+                <div class="input-group">
+                    <label>Polygon Color</label>
+                    <input type="color" id="polygon-color" value="#FF0000">
+                </div>
+                <div class="input-group">
+                    <label>Label Rotation (°)</label>
+                    <input type="number" id="label-rotation" value="0" min="0" max="359">
+                </div>
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="show-labels" checked> Show Labels
+                    </label>
+                    <label>
+                        <input type="checkbox" id="show-vertices" checked> Show Vertices
+                    </label>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Calculated Values</h3>
+                <div class="calculation-results">
+                    <div class="calc-item">
+                        <label>Area:</label>
+                        <span id="polygon-area">0.00 m²</span>
+                    </div>
+                    <div class="calc-item">
+                        <label>Perimeter:</label>
+                        <span id="polygon-perimeter">0.00 m</span>
+                    </div>
+                    <div class="calc-item">
+                        <label>Vertices:</label>
+                        <span id="polygon-vertices">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-success" onclick="savePolygon()">
+                <i class="fas fa-save"></i> Save Polygon
+            </button>
+        </div>
+
+        <!-- Export Tools Tab -->
+        <div id="export-tools" class="tab-content">
+            <div class="section">
+                <h3>Export Current Polygon</h3>
+                <button class="btn btn-export csv" onclick="exportPolygon('csv')">
+                    <i class="fas fa-file-csv"></i> CSV Format
+                </button>
+                <button class="btn btn-export geojson" onclick="exportPolygon('geojson')">
+                    <i class="fas fa-file-code"></i> GeoJSON
+                </button>
+                <button class="btn btn-export dxf" onclick="exportPolygon('dxf')">
+                    <i class="fas fa-file"></i> DXF Format
+                </button>
+            </div>
+
+            <div class="section">
+                <h3>Export All Data</h3>
+                <a href="/api/export/csv" class="btn btn-export csv">
+                    <i class="fas fa-file-csv"></i> All as CSV
+                </a>
+                <a href="/api/export/geojson" class="btn btn-export geojson">
+                    <i class="fas fa-file-code"></i> All as GeoJSON
+                </a>
+                <a href="/api/export/kml" class="btn btn-export kml">
+                    <i class="fas fa-globe"></i> All as KML
+                </a>
+                <a href="/api/export/dxf" class="btn btn-export dxf">
+                    <i class="fas fa-file"></i> All as DXF
+                </a>
+            </div>
+
+            <div class="section">
+                <h3>Import Data</h3>
+                <input type="file" id="import-file" accept=".csv,.geojson,.json" style="display: none;" onchange="handleFileImport()">
+                <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">
+                    <i class="fas fa-upload"></i> Import File
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Map Container -->
+    <div class="map-container">
+        <div class="map-header">
+            <div class="map-controls">
+                <button class="map-btn" onclick="toggleMeasurement()" title="Measurement Tools">
+                    <i class="fas fa-ruler"></i>
+                </button>
+                <button class="map-btn" onclick="toggleCoordinateGrid()" title="Coordinate Grid">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button class="map-btn" onclick="centerMap()" title="Center Map">
+                    <i class="fas fa-crosshairs"></i>
+                </button>
+                <button class="map-btn" onclick="toggleFullscreen()" title="Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div id="map" class="map-view">
+            {{ map_html|safe }}
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <i class="fas fa-map-pin"></i>
+                <span id="cursor-coords">Click on map for coordinates</span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-calculator"></i>
+                <span id="live-calculations">Ready</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.surveying-interface {
+    display: flex;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    background: #f5f7fa;
+}
+
+.sidebar {
+    width: 350px;
+    background: white;
+    border-right: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+}
+
+.sidebar-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+.sidebar-header p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: 0.9em;
+}
+
+.tab-navigation {
+    display: flex;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.8em;
+    color: #64748b;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.tab-btn:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.tab-btn.active {
+    background: white;
+    color: #667eea;
+    border-bottom: 2px solid #667eea;
+}
+
+.tab-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.section h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    color: #334155;
+    font-weight: 600;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.9em;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9em;
+    transition: border-color 0.2s;
+}
+
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.dms-input {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.dms-input input {
+    width: auto;
+    flex: 1;
+}
+
+.info-box {
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+}
+
+.btn {
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5a67d8;
+}
+
+.btn-secondary {
+    background: #64748b;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #475569;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #d1d5db;
+}
+
+.btn-outline:hover {
+    background: #f8fafc;
+    border-color: #9ca3af;
+}
+
+.btn-export {
+    text-decoration: none;
+    margin-bottom: 8px;
+}
+
+.btn-export.csv {
+    background: #10b981;
+    color: white;
+}
+
+.btn-export.geojson {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-export.dxf {
+    background: #f59e0b;
+    color: white;
+}
+
+.btn-export.kml {
+    background: #8b5cf6;
+    color: white;
+}
+
+.vertices-table {
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.table-header {
+    background: #f8fafc;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 30px 1fr 1fr 60px;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 0.8em;
+    color: #374151;
+}
+
+.table-body {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.vertex-row {
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: 30px 1fr 1fr 60px;
+    gap: 10px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.8em;
+    align-items: center;
+}
+
+.vertex-row:nth-child(even) {
+    background: #fafbfc;
+}
+
+.vertex-row input {
+    padding: 4px;
+    border: 1px solid #d1d5db;
+    border-radius: 3px;
+    font-size: 0.8em;
+    width: 100%;
+}
+
+.vertex-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.vertex-action-btn {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #64748b;
+    border-radius: 3px;
+}
+
+.vertex-action-btn:hover {
+    background: #f1f5f9;
+    color: #374151;
+}
+
+.vertex-action-btn.delete:hover {
+    color: #dc2626;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.calculation-results {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+}
+
+.calc-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+}
+
+.calc-item:last-child {
+    margin-bottom: 0;
+}
+
+.calc-item label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.calc-item span {
+    font-weight: 600;
+    color: #667eea;
+}
+
+.map-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+}
+
+.map-header {
+    padding: 10px 20px;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.map-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.map-btn {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.map-btn:hover {
+    background: #f8fafc;
+    border-color: #9ca3af;
+}
+
+.map-view {
+    flex: 1;
+    position: relative;
+}
+
+.status-bar {
+    padding: 8px 20px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8em;
+    color: #64748b;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.section-footer {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.8em;
+    margin-top: 10px;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .surveying-interface {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        height: 40vh;
+    }
+    
+    .map-container {
+        height: 60vh;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let currentVertices = [];
+let currentPolygon = null;
+let map = null;
+let clickToAddMode = false;
+
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApplication();
+});
+
+function initializeApplication() {
+    updateVerticesList();
+    updateCalculations();
+    
+    // Setup map click handler if map exists
+    setupMapInteraction();
+}
+
+// Tab management
+function showTab(tabId) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab
+    document.getElementById(tabId).classList.add('active');
+    
+    // Update button state
+    event.target.classList.add('active');
+}
+
+// Entry method toggle
+function toggleEntryMethod() {
+    const method = document.getElementById('entryMethod').value;
+    const coordsEntry = document.getElementById('coordinates-entry');
+    const distAzEntry = document.getElementById('distance-azimuth-entry');
+    
+    if (method === 'coordinates') {
+        coordsEntry.style.display = 'block';
+        distAzEntry.style.display = 'none';
+    } else {
+        coordsEntry.style.display = 'none';
+        distAzEntry.style.display = 'block';
+        updateReferencePointInfo();
+    }
+}
+
+function updateReferencePointInfo() {
+    const info = document.getElementById('reference-point-info');
+    if (currentVertices.length === 0) {
+        info.innerHTML = '<small>Add first point using coordinates</small>';
+    } else {
+        const lastVertex = currentVertices[currentVertices.length - 1];
+        info.innerHTML = `<small>Reference: ${lastVertex.lat.toFixed(6)}, ${lastVertex.lon.toFixed(6)}</small>`;
+    }
+}
+
+// Add vertex functionality
+function addVertex() {
+    const method = document.getElementById('entryMethod').value;
+    let lat, lon;
+    
+    if (method === 'coordinates') {
+        lat = parseFloat(document.getElementById('latitude').value);
+        lon = parseFloat(document.getElementById('longitude').value);
+        
+        if (isNaN(lat) || isNaN(lon)) {
+            alert('Please enter valid coordinates');
+            return;
+        }
+    } else {
+        // Distance and azimuth method
+        if (currentVertices.length === 0) {
+            alert('Please add the first point using coordinates');
+            return;
+        }
+        
+        const distance = parseFloat(document.getElementById('distance').value);
+        const degrees = parseFloat(document.getElementById('azimuth-degrees').value) || 0;
+        const minutes = parseFloat(document.getElementById('azimuth-minutes').value) || 0;
+        const seconds = parseFloat(document.getElementById('azimuth-seconds').value) || 0;
+        
+        if (isNaN(distance) || distance <= 0) {
+            alert('Please enter a valid distance');
+            return;
+        }
+        
+        const azimuthDecimal = degrees + minutes/60 + seconds/3600;
+        const lastVertex = currentVertices[currentVertices.length - 1];
+        
+        // Calculate new point using geodesic calculation
+        const coords = calculatePointFromDistanceAzimuth(lastVertex.lat, lastVertex.lon, distance, azimuthDecimal);
+        lat = coords.lat;
+        lon = coords.lon;
+    }
+    
+    // Add vertex to list
+    currentVertices.push({ lat, lon, id: currentVertices.length + 1 });
+    
+    updateVerticesList();
+    updateCalculations();
+    updateReferencePointInfo();
+    
+    // Clear inputs
+    clearInputs();
+    
+    // Update status
+    document.getElementById('live-calculations').textContent = `Added vertex ${currentVertices.length}`;
+}
+
+function calculatePointFromDistanceAzimuth(startLat, startLon, distance, azimuth) {
+    // This is a simplified calculation - in production, use a proper geodesic library
+    const R = 6378137; // Earth's radius in meters
+    const lat1 = startLat * Math.PI / 180;
+    const lon1 = startLon * Math.PI / 180;
+    const bearing = azimuth * Math.PI / 180;
+    
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(distance / R) +
+                          Math.cos(lat1) * Math.sin(distance / R) * Math.cos(bearing));
+    
+    const lon2 = lon1 + Math.atan2(Math.sin(bearing) * Math.sin(distance / R) * Math.cos(lat1),
+                                   Math.cos(distance / R) - Math.sin(lat1) * Math.sin(lat2));
+    
+    return {
+        lat: lat2 * 180 / Math.PI,
+        lon: lon2 * 180 / Math.PI
+    };
+}
+
+function addVertexFromMap() {
+    clickToAddMode = true;
+    document.getElementById('live-calculations').textContent = 'Click on map to add vertex...';
+    // Map click handler will be setup in setupMapInteraction()
+}
+
+function clearInputs() {
+    document.getElementById('latitude').value = '';
+    document.getElementById('longitude').value = '';
+    document.getElementById('distance').value = '';
+    document.getElementById('azimuth-degrees').value = '';
+    document.getElementById('azimuth-minutes').value = '';
+    document.getElementById('azimuth-seconds').value = '';
+}
+
+// Vertex list management
+function updateVerticesList() {
+    const listContainer = document.getElementById('vertices-list');
+    const countElement = document.getElementById('vertex-count');
+    
+    if (currentVertices.length === 0) {
+        listContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #64748b;">No vertices added yet</div>';
+        countElement.textContent = '0 vertices';
+        return;
+    }
+    
+    listContainer.innerHTML = currentVertices.map((vertex, index) => `
+        <div class="vertex-row">
+            <span>${vertex.id}</span>
+            <input type="number" step="any" value="${vertex.lat.toFixed(6)}" onchange="updateVertex(${index}, 'lat', this.value)">
+            <input type="number" step="any" value="${vertex.lon.toFixed(6)}" onchange="updateVertex(${index}, 'lon', this.value)">
+            <div class="vertex-actions">
+                <button class="vertex-action-btn delete" onclick="deleteVertex(${index})" title="Delete">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
+    
+    countElement.textContent = `${currentVertices.length} vertices`;
+}
+
+function updateVertex(index, field, value) {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+        currentVertices[index][field] = numValue;
+        updateCalculations();
+    }
+}
+
+function deleteVertex(index) {
+    currentVertices.splice(index, 1);
+    // Reassign IDs
+    currentVertices.forEach((vertex, i) => {
+        vertex.id = i + 1;
+    });
+    updateVerticesList();
+    updateCalculations();
+}
+
+// Polygon calculations
+function updateCalculations() {
+    if (currentVertices.length < 3) {
+        document.getElementById('polygon-area').textContent = '0.00 m²';
+        document.getElementById('polygon-perimeter').textContent = '0.00 m';
+        document.getElementById('polygon-vertices').textContent = currentVertices.length.toString();
+        return;
+    }
+    
+    // Calculate area and perimeter using the existing backend calculation
+    const coordinates = currentVertices.map(v => [v.lat, v.lon]);
+    
+    // For now, use approximate calculation
+    const area = calculatePolygonArea(coordinates);
+    const perimeter = calculatePolygonPerimeter(coordinates);
+    
+    document.getElementById('polygon-area').textContent = formatArea(area);
+    document.getElementById('polygon-perimeter').textContent = `${perimeter.toFixed(2)} m`;
+    document.getElementById('polygon-vertices').textContent = currentVertices.length.toString();
+}
+
+function calculatePolygonArea(coordinates) {
+    if (coordinates.length < 3) return 0;
+    
+    // Simplified area calculation (should use proper geodesic calculation in production)
+    let area = 0;
+    const n = coordinates.length;
+    
+    for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        area += coordinates[i][1] * coordinates[j][0];
+        area -= coordinates[j][1] * coordinates[i][0];
+    }
+    
+    area = Math.abs(area) / 2;
+    return area * 111320 * 111320; // Rough conversion to square meters
+}
+
+function calculatePolygonPerimeter(coordinates) {
+    if (coordinates.length < 2) return 0;
+    
+    let perimeter = 0;
+    for (let i = 0; i < coordinates.length; i++) {
+        const current = coordinates[i];
+        const next = coordinates[(i + 1) % coordinates.length];
+        
+        // Calculate distance using Haversine formula (simplified)
+        const R = 6371000; // Earth's radius in meters
+        const dLat = (next[0] - current[0]) * Math.PI / 180;
+        const dLon = (next[1] - current[1]) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(current[0] * Math.PI / 180) * Math.cos(next[0] * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = R * c;
+        
+        perimeter += distance;
+    }
+    
+    return perimeter;
+}
+
+function formatArea(area) {
+    if (area >= 10000) {
+        return `${(area / 10000).toFixed(2)} ha`;
+    } else {
+        return `${area.toFixed(2)} m²`;
+    }
+}
+
+// Polygon management
+function clearPolygon() {
+    if (confirm('Clear all vertices?')) {
+        currentVertices = [];
+        updateVerticesList();
+        updateCalculations();
+        document.getElementById('live-calculations').textContent = 'Polygon cleared';
+    }
+}
+
+function closePolygon() {
+    if (currentVertices.length < 3) {
+        alert('Need at least 3 vertices to close polygon');
+        return;
+    }
+    
+    // Add first vertex to the end to close the polygon
+    const firstVertex = currentVertices[0];
+    currentVertices.push({ ...firstVertex, id: currentVertices.length + 1 });
+    updateVerticesList();
+    updateCalculations();
+    document.getElementById('live-calculations').textContent = 'Polygon closed';
+}
+
+function savePolygon() {
+    if (currentVertices.length < 3) {
+        alert('Need at least 3 vertices to save polygon');
+        return;
+    }
+    
+    const name = document.getElementById('polygon-name').value || 'Survey Area';
+    const description = document.getElementById('polygon-description').value || '';
+    const type = document.getElementById('polygon-type').value;
+    const coordinates = currentVertices.map(v => [v.lat, v.lon]);
+    
+    const polygonData = {
+        name: name,
+        description: description,
+        coordinates: coordinates,
+        polygon_type: type
+    };
+    
+    fetch('/api/polygons', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(polygonData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert('Polygon saved successfully!');
+        document.getElementById('live-calculations').textContent = 'Polygon saved';
+        // Optionally clear the current polygon
+        // clearPolygon();
+    })
+    .catch(error => {
+        alert('Error saving polygon: ' + error);
+    });
+}
+
+// Export functions
+function exportPolygon(format) {
+    if (currentVertices.length < 3) {
+        alert('Need at least 3 vertices to export');
+        return;
+    }
+    
+    const coordinates = currentVertices.map(v => [v.lat, v.lon]);
+    const name = document.getElementById('polygon-name').value || 'Survey Area';
+    
+    if (format === 'csv') {
+        exportAsCSV(coordinates, name);
+    } else if (format === 'geojson') {
+        exportAsGeoJSON(coordinates, name);
+    } else if (format === 'dxf') {
+        exportAsDXF(coordinates, name);
+    }
+}
+
+function exportAsCSV(coordinates, name) {
+    let csv = 'Type,Name,Latitude,Longitude,Vertex_ID\\n';
+    coordinates.forEach((coord, index) => {
+        csv += `Vertex,${name},${coord[0]},${coord[1]},${index + 1}\\n`;
+    });
+    
+    downloadFile(csv, `${name}.csv`, 'text/csv');
+}
+
+function exportAsGeoJSON(coordinates, name) {
+    const geojson = {
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            geometry: {
+                type: 'Polygon',
+                coordinates: [coordinates.map(coord => [coord[1], coord[0]])] // GeoJSON uses [lon, lat]
+            },
+            properties: {
+                name: name,
+                vertices: coordinates.length
+            }
+        }]
+    };
+    
+    downloadFile(JSON.stringify(geojson, null, 2), `${name}.geojson`, 'application/json');
+}
+
+function exportAsDXF(coordinates, name) {
+    // Create a simple DXF-like structure (simplified)
+    alert('DXF export will be implemented with the backend endpoint');
+}
+
+function downloadFile(content, filename, contentType) {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Map interaction
+function setupMapInteraction() {
+    // This would integrate with the Folium map
+    // For now, we'll simulate map clicks
+    console.log('Map interaction setup - integrate with Folium map for click events');
+}
+
+function toggleMeasurement() {
+    alert('Use the drawing tools on the map or the sidebar controls for precise measurements');
+}
+
+function toggleCoordinateGrid() {
+    alert('Coordinate grid toggle - implement with map library');
+}
+
+function centerMap() {
+    if (currentVertices.length > 0) {
+        // Calculate center of current vertices
+        const avgLat = currentVertices.reduce((sum, v) => sum + v.lat, 0) / currentVertices.length;
+        const avgLon = currentVertices.reduce((sum, v) => sum + v.lon, 0) / currentVertices.length;
+        console.log(`Center map on: ${avgLat}, ${avgLon}`);
+    }
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+// File import
+function handleFileImport() {
+    const file = document.getElementById('import-file').files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const format = file.name.endsWith('.csv') ? 'csv' : 'geojson';
+    
+    fetch(`/api/import/${format}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully imported ${data.imported_points} points and ${data.imported_polygons} polygons!`);
+            location.reload();
+        } else {
+            alert('Import failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error importing data: ' + error);
+    });
+}
+</script>
+{% endblock %}
